@@ -142,7 +142,7 @@ print(len(samplesToAdd))
 samples = []
 with open('samples.txt', 'r', encoding='utf-8') as samples_file:
     for line in samples_file:
-        line = re.sub(r"^\s*", '', line)
+        line = re.sub(r"(^\s*|:)", '', line)
         samples.append(line)
 
 #Write new samples to New Dict
@@ -204,8 +204,8 @@ for key, value in dictmodels.items():
             n+=1
             i = i+1
         print("Added 20 new dozapr samples:")
-        print(key)
-        print(DictNew[item]['modelPath'][key])
+#        print(key)
+#        print(DictNew[item]['modelPath'][key])
 
 #Check unused classes and models
 key_list = list(DictNew.keys())
@@ -253,8 +253,12 @@ for key, value in DictNew.items():
     samps = []
     samps = DictNew[key].get('samples')
     modelsamps = {}
+    #Подгружаем словарь всех modelPath c примерами для данного класса(стейта):
     modelsamps = DictNew[key].get('modelPath')
-    #print(type(modelsamps))
+    print(type(modelsamps))
+    if modelsamps:
+        print(len(modelsamps))
+    print(modelsamps)
     q = []
     if samps:
         for item in samps:
@@ -267,23 +271,30 @@ for key, value in DictNew.items():
     if modelsamps:
         #print(type(modelsamps))
         #print(" должен быть Dict")
-        qm = {} 
-        qm_samples = []
+        #qm = {} 
+        #qm_samples = []
+        #здесь model - modelpath, samples - примеры на данную модель:
         for model, samples in modelsamps.items():
+            qm = {} 
+            qm_samples = []
             #print(model)
-            for item in modelsamps[model]:
-                item = str(indent) + item
+            #Пройдемся по всем примерам, добавим отступ:
+            for item in samples:
+                item = str(indent) + str(item)
                 qm_samples.append(item)
-            model = str(indent) + model 
+            #model = str(indent) + model 
             qm[model] = qm_samples
             #print(type(qm))
-            try:
-                DictIndent[indent + key][indent + '    - modelPath'][model] = []
-            except KeyError:
-                DictIndent[indent + key][indent + '    - modelPath'] = { } 
-                DictIndent[indent + key][indent + '    - modelPath'][model] = []
-                DictIndent[indent + key][indent + '    - modelPath'][model].append(qm_samples)
-        modelsamps = 'false'
+            #try:
+            DictIndent[indent + key][indent + '    - modelPath: ' + model] = {} 
+            #except KeyError:
+            #    print("ой-ой-ой")
+            #    DictIndent[indent + key][indent + '    - modelPath'] = { } 
+            #    DictIndent[indent + key][indent + '    - modelPath'][model] = []
+            DictIndent[indent + key][indent + '    - modelPath: ' + model][indent + '   q'] = qm_samples
+    else:
+        print("Попали в else")
+        #modelsamps = 'false'
 #print(DictIndent)
     
 with open('dataset.yaml', 'w', encoding='utf-8') as dataset:
@@ -314,13 +325,15 @@ with open('classifier_samples.yaml', 'w', encoding='utf-8') as classifier_sample
     with open('dataset.yaml', 'r', encoding='utf-8') as input_yaml:
         for line in input_yaml:
             #re.sub(r'(^[']|[']$|':|{}), '', line)
-            line = re.sub(r"[@\'\"?\$%#{}\[\]]", "", line)
+            line = re.sub(r"[@\'\"?\$%&{}\[\]]", "", line)
             #if 'q:' in line:
             #    line = re.sub(r"([\s#]*)q:", r"\1qs:\n\1  q:", line)
             if re.findall(r"^\s*-([\s]*)(.*)", line):
                 line = re.sub(r"-([\s]*)(.*)", r"\1- \2", line)
-            #if '- modelPath:' in line:
-            #    line = line.rstrip(r"\n\s*") 
+            if '- modelPath:' in line:
+                line = line[:-2] + '\n' 
+            if re.findall(r"^\s*q:(.*)", line):
+                line = re.sub(r"(^\s*q:)(.*)", r"\1", line)
             #print(line)
             classifier_samples.write(line)
 
